@@ -1,11 +1,10 @@
-"""聊天入口脚本
+"""聊天入口脚本（已集成对话记录）
 
 用法：
   python3 chat.py --mode local
   python3 chat.py --mode openai
 
-在 openai 模式下，会读取环境变量 OPENAI_API_KEY（也支持 .env 文件）。
-在 local 模式下，使用简单的规则引擎（simple_bot）进行应答，适合离线使用或无 API Key 场景。
+会把每一轮（user/assistant）记录到 data/conversations.jsonl，方便后续用于训练数据准备。
 """
 
 import argparse
@@ -15,9 +14,11 @@ import json
 from dotenv import load_dotenv
 import requests
 from simple_bot import SimpleBot
+from logger import ConversationLogger
+from datetime import datetime
 
 
-def openai_chat_loop(api_key):
+def openai_chat_loop(api_key, logger=None):
     print("OpenAI 模式：开始会话。输入 exit/quit/q 退出。")
     system_prompt = "你是一个乐于助人的中文聊天机器人。回答尽量简短、友好。"
     messages = [{"role": "system", "content": system_prompt}]
@@ -51,9 +52,15 @@ def openai_chat_loop(api_key):
             assistant = "抱歉，调用 OpenAI 接口出错。"
         print("AI:", assistant)
         messages.append({"role": "assistant", "content": assistant})
+        # log
+        if logger:
+            try:
+                logger.log_turn(user, assistant)
+            except Exception:
+                pass
 
 
-def local_chat_loop():
+def local_chat_loop(logger=None):
     print("本地模式：开始会话（规则/数学/时间）。输入 exit/quit/q 退出。")
     bot = SimpleBot()
     while True:
@@ -67,12 +74,19 @@ def local_chat_loop():
             break
         resp = bot.get_response(user)
         print("AI:", resp)
+        if logger:
+            try:
+                logger.log_turn(user, resp)
+            except Exception:
+                pass
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Termux 友好的 Python 聊天机器人示例")
+    parser = argparse.ArgumentParser(description="Termux 友好的 Python 聊天机器人示例（带记录）")
     parser.add_argument("--mode", choices=["openai", "local"], default="local", help="运行模式: openai 或 local")
     args = parser.parse_args()
+
+    logger = ConversationLogger('data/conversations.jsonl')
 
     if args.mode == "openai":
         load_dotenv()
@@ -80,9 +94,9 @@ def main():
         if not api_key:
             print("未检测到 OPENAI_API_KEY，无法使用 openai 模式。请在 .env 或环境变量中设置。")
             sys.exit(1)
-        openai_chat_loop(api_key)
+        openai_chat_loop(api_key, logger=logger)
     else:
-        local_chat_loop()
+        local_chat_loop(logger=logger)
 
 
 if __name__ == '__main__':
