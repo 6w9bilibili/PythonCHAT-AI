@@ -1,12 +1,7 @@
-"""聊天入口脚本（已集成对话记录）
-
-用法：
-  python3 chat.py --mode local
-  python3 chat.py --mode openai
-
-会把每一轮（user/assistant）记录到 data/conversations.jsonl，方便后续用于训练数据准备。
 """
-
+chat.py updates: set display name to PopSugerAI in prompts and prints
+"""
+#!/usr/bin/env python3
 import argparse
 import os
 import sys
@@ -18,9 +13,9 @@ from logger import ConversationLogger
 from datetime import datetime
 
 
-def openai_chat_loop(api_key, logger=None):
-    print("OpenAI 模式：开始会话。输入 exit/quit/q 退出。")
-    system_prompt = "你是一个乐于助人的中文聊天机器人。回答尽量简短、友好。"
+def openai_chat_loop(api_key, logger=None, display_name='PopSugerAI'):
+    print(f"{display_name} 模式：开始会话。输入 exit/quit/q 退出。")
+    system_prompt = f"你是 {display_name}，一个乐于助人的中文聊天机器人。回答尽量简短、友好。"
     messages = [{"role": "system", "content": system_prompt}]
     while True:
         try:
@@ -60,8 +55,8 @@ def openai_chat_loop(api_key, logger=None):
                 pass
 
 
-def local_chat_loop(logger=None):
-    print("本地模式：开始会话（规则/数学/时间）。输入 exit/quit/q 退出。")
+def local_chat_loop(logger=None, display_name='PopSugerAI'):
+    print(f"{display_name} 本地模式：开始会话（规则/数学/时间）。输入 exit/quit/q 退出。")
     bot = SimpleBot()
     while True:
         try:
@@ -82,7 +77,7 @@ def local_chat_loop(logger=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Termux 友好的 Python 聊天机器人示例（带记录）")
+    parser = argparse.ArgumentParser(description="Termux 友好的 PopSugerAI 聊天机器人示例（带记录）")
     parser.add_argument("--mode", choices=["openai", "local"], default="local", help="运行模式: openai 或 local")
     args = parser.parse_args()
 

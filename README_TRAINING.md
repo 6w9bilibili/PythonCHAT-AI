@@ -1,38 +1,30 @@
-Training guide and recommended workflow
+Training guide and recommended workflow for PopSugerAI
 
-This document explains how to collect data, prepare training JSONL, and run fine-tuning either
-via OpenAI or with Hugging Face + PEFT (LoRA) on GPU/Colab.
+This document explains how to collect data, prepare training JSONL, and run fine-tuning or from-scratch training with Hugging Face.
 
 1) Data collection (on Termux)
-- Use the built-in logger: chat.py will now log turns to data/conversations.jsonl
+- Use the built-in logger: chat.py logs turns to data/conversations.jsonl
 - Each line is a JSON object {"user":"...","assistant":"...","timestamp":"..."}
 
 2) Prepare training data
 - Run:
     python3 data_prep.py --input data/conversations.jsonl --output data/training.jsonl
-- This converts turns into instruction tuning format:
-    {"instruction": "用户: <user>", "input": "", "output": "<assistant>"}
+- This converts turns into instruction tuning format used by the training scripts
 
-3) Fine-tuning options
-- OpenAI fine-tune (Hosted):
-  - Pros: managed, easy to start
-  - Cons: cost, limited control
-  - Steps: generate data/training.jsonl, then either use the OpenAI CLI or API to upload the file and start fine-tune. See openai_finetune.sh for an upload example.
+3) From-scratch training (example pipeline)
+- Make corpus for tokenizer:
+    python3 scripts/make_corpus.py --input data/training.jsonl --output data/corpus.txt
+- Train tokenizer:
+    python3 scripts/train_tokenizer.py --corpus data/corpus.txt --out tokenizer
+- Train model from scratch (tiny recommended for quick experiments):
+    python3 scripts/train_from_scratch.py --data data/training.jsonl --tokenizer_dir tokenizer --output outputs/from_scratch --model_size tiny
 
-- Hugging Face + PEFT (recommended for open-source models):
-  - Pros: full control, can use LoRA/PEFT to reduce compute
-  - Cons: requires GPU/Colab, more setup
-  - Use train_peft.py as a starting template. Run on Colab or a machine with CUDA and sufficient VRAM.
+Notes:
+- From-scratch training requires a lot of data for good results. If your dataset is small, prefer fine-tuning a pre-trained model (see train_peft.py).
+- After a successful training, the model output directory contains metadata.json with display_name=PopSugerAI. Inference wrappers (chat.py or other) can read and display this name.
 
-4) Deploying model to Termux (inference)
-- If using OpenAI: call the hosted model via API from chat.py (openai mode) or adapt to a wrapper.
-- If using a local open-source model:
-  - Fine-tune with PEFT/LoRA, merge weights, quantize if needed, and use on-device runtimes like llama.cpp or similar (depends on model format and compatibility).
+4) Fine-tuning (PEFT/LoRA)
+- See train_peft.py for an example of using Hugging Face + PEFT for efficient fine-tuning. This is recommended when compute is limited.
 
 5) Security and privacy
 - 对话中可能包含敏感信息，请在上传训练前审查并清洗数据。
-
-6) Next steps I can help implement
-- 自动脱敏工具（删除邮箱/手机号等）
-- 更复杂的 data_prep（合并多轮、构建上下文窗口）
-- Colab-ready notebook for running train_peft.py

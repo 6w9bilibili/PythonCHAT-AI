@@ -1,2 +1,9 @@
 requests
 python-dotenv
+transformers>=4.30.0
+datasets
+tokenizers
+accelerate
+torch
+peft
+evaluate
