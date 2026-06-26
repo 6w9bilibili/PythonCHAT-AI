@@ -1,0 +1,19 @@
+# Train-from-scratch config for PopSugerAI
+
+model:
+  size: tiny        # tiny/small/medium
+  seq_len: 512
+  vocab_size: 32000
+
+data:
+  training_jsonl: data/training.jsonl
+  corpus_txt: data/corpus.txt
+
+tokenizer:
+  vocab_size: 32000
+  min_frequency: 2
+
+training:
+  epochs: 3
+  batch_size: 4
+  fp16: false

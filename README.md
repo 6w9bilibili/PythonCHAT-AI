@@ -1,30 +1,30 @@
-# PythonCHAT-AI
+# PopSugerAI
 
-这是一个为 Termux（Android 终端）准备的简单聊天机器人示例仓库。
+PopSugerAI — a lightweight, Termux-friendly chatbot and training pipeline derived from the original PythonCHAT-AI project.
 
-包含两个运行模式：
-- openai：使用 OpenAI Chat Completions API（需要设置 OPENAI_API_KEY）。
-- local：一个轻量的规则/数学/时间应答本地备选实现，不依赖大型模型。
+This repository now includes tools to collect conversation logs, prepare training data, train a tokenizer and train a GPT-like model from scratch (for experimentation).
 
-Termux 快速开始（在 Termux 中执行）：
+Quick start
 
-```bash
-pkg update && pkg upgrade -y
-pkg install python git -y
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
+1) Install dependencies (adjust torch to your CUDA version):
 
-复制环境文件并填写 API Key（可选）：
-```bash
-cp .env.example .env
-# 编辑 .env，填写 OPENAI_API_KEY
-```
+    pip install -r requirements.txt
 
-运行：
-```bash
-python3 chat.py --mode local    # 本地离线模式
-python3 chat.py --mode openai   # 使用 OpenAI（需 API Key）
-```
+2) Collect conversations by running chat.py in local mode (it appends turns to data/conversations.jsonl):
 
-更多说明见下文文件。
+    python3 chat.py --mode local
+
+3) Prepare training JSONL (already provided by data_prep.py):
+
+    python3 data_prep.py --input data/conversations.jsonl --output data/training.jsonl
+
+4) Make corpus and train tokenizer:
+
+    python3 scripts/make_corpus.py --input data/training.jsonl --output data/corpus.txt
+    python3 scripts/train_tokenizer.py --corpus data/corpus.txt --out tokenizer
+
+5) Train from scratch (tiny model recommended for single-GPU experimentation):
+
+    python3 scripts/train_from_scratch.py --data data/training.jsonl --tokenizer_dir tokenizer --output outputs/from_scratch --model_size tiny --epochs 3 --batch 4
+
+After training the model will save a metadata.json that contains "display_name": "PopSugerAI" which inference wrappers can read and display.
